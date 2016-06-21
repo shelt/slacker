@@ -1,8 +1,10 @@
-# Gentool
+# Slacker
 
-A Gentoo install script that makes sense.
+A Slackware linux installation script.
 
-*This readme will eventually be fleshed out.*
+## Usage
+
+*TODO*
 
 
 ## todo
