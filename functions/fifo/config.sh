@@ -2,20 +2,19 @@
 
 config()
 {
-    step declare_vars
-    step set_time #TODO
-    step identify_hardware
-    step prompt_settings
-    step config_partitions
+    declare_vars
+    set_time #TODO
+    identify_hardware
+    prompt_settings
+    config_partitions
 }
 
 # Also sets defaults
 declare_vars()
 {
     ### NON-CONFIGURABLE ###
-    declare -gx SLACK_MIRROR="ftp://mirror.csclub.uwaterloo.ca/slackware/slackware64-14.1/slackware64/"
+    declare -gx SLACK_MIRROR="ftp://mirrors1.kernel.org/slackware/slackware64-14.1/slackware64/"
     declare -gx CHROOT_DIR="/mnt/root" # Where root will be mounted in live environment
-    declare -gx PKG_DIR="/pkg"   # `CHROOT_` prefix means chroot-relative path #TODO should be configurable, default would be within root
     declare -gx DESIRED_PKGS="
 kbd
 dhcpcd
@@ -32,9 +31,6 @@ wget
     declare -gx DECR_ROOT="/dev/$LVM_NAME_VG/$LVM_NAME_ROOT"
     declare -gx DECR_SWAP="/dev/$LVM_NAME_VG/$LVM_NAME_SWAP"
 
-    declare -gx NC='\033[0m'
-    declare -gx RED='\033[0;31m'
-
     ### BASED ON CONFIGURABLES ###
     declare -gx BOOT_PART
     declare -gx ENCR_PART
@@ -45,11 +41,12 @@ wget
     ### CONFIGURABLES ###
     
     declare -gx DRIVE='/dev/sda'            # Default drive to install to.
-    declare -gx HOSTNAME='arch'             # Default hostname of the installed machine.
+    declare -gx HOSTNAME='slack'            # Default hostname of the installed machine.
     declare -gx ENCRYPT=true                # Encrypt everything (except /boot).
     declare -gx USER_NAME='user'            # Default user to create (by default, added to wheel group, and others).
     declare -gx TIMEZONE='America/Winnipeg' # Default system timezone.
     declare -gx EXTENDED_CONFIG=false       # Prompt user for extended settings.
+    declare -gx PKG_DIR
     declare -gx WIRELESS_DEVICE
     declare -gx WIRED_DEVICE
     declare -gx VIDEO_DRIVER="i915" # For Intel #TODO autodetection
@@ -85,6 +82,7 @@ prompt_settings()
     read_pass "Root password" ROOT_PASS
     [ -z "$WIRED_DEVICE" ] && read_init "Wired device (autodetect failed)" WIRED_DEVICE          #TODO make not mandatory
     [ -z "$WIRELESS_DEVICE" ] && read_init "Wireless device (autodetect failed)" WIRELESS_DEVICE #TODO make not mandatory
+    read_init "Slackware package directory" PKG_DIR
     
     read_dflt "Extended configuration? true/false" EXTENDED_CONFIG
     if [ "$EXTENDED_CONFIG" == true ]; then
@@ -123,10 +121,8 @@ prompt_settings()
 
 config_partitions()
 {
-    global BOOT_PART="$DRIVE"1
-    global ENCR_PART="$DRIVE"2
-    global DECR_MAPPER
-    global DECR_PART
+    BOOT_PART="$DRIVE"1
+    ENCR_PART="$DRIVE"2
     if [ "$ENCRYPT" == true ]
     then
         DECR_PART="/dev/mapper/$DECR_MAPPER"
@@ -139,14 +135,16 @@ config_partitions()
 ### UTIL ###
 read_init()
 {
+    # TODO this function always invokes readline! Problem?
     local prompt="$1"
     local dest="$2"
-    global "$dest"=''
+    unset "$dest"
     
     until [ -n "${!dest}" ]; do
         tell "$prompt" "(default ${!dest}): "
-        read -r "$dest"
+        read -re -p "$READPROMPT" "$dest"
     done
+    declare -gx "$dest"
 }
 
 read_dflt()
@@ -156,8 +154,8 @@ read_dflt()
     local temp
     
     tell "$prompt" "(default ${!dest}): "
-    read -r temp
-    global "$dest"="${temp:-${!dest}}"
+    read -r -p "$READPROMPT" temp
+    declare -gx "$dest"="${temp:-${!dest}}"
 }
 
 read_pass()
@@ -165,16 +163,18 @@ read_pass()
     local prompt="$1"
     local dest="$2"
     local conf
-    global "$dest"
     while [[ -z "${!dest}" ]] || [[ -z "$conf" ]] || [ "${!dest}" != "$conf" ]; do
-        read -rsp "$prompt: " dest
-        read -rsp "Verify: " "$conf"
+        tell "$prompt: "
+        read -rs -p "$READPROMPT" "$dest" && printf "\n"
+        tell "Verify: "
+        read -rs -p "$READPROMPT" conf && printf "\n"
     done
+    declare -gx "$dest"
 }
 
 identify_hardware()
 {
     #TODO should have seperate functions that return the data to the vars
-    global WIRED_DEVICE="$(ip link | grep "eno\|enp" | awk '{print $2}'| sed 's/://' | sed '1!d')"
-    global WIRELESS_DEVICE="$(ip link | grep wlp | awk '{print $2}'| sed 's/://' | sed '1!d')"
+    WIRED_DEVICE="$(ip link | grep "eno\|enp" | awk '{print $2}'| sed 's/://' | sed '1!d')"
+    WIRELESS_DEVICE="$(ip link | grep wlp | awk '{print $2}'| sed 's/://' | sed '1!d')"
 }
