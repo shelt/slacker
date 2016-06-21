@@ -34,7 +34,7 @@ install_lilo()
 create_user()
 {
     id -u "$USER_NAME" &>/dev/null || useradd -m -s /bin/bash -G \
-        adm,systemd-journal,wheel,rfkill,games,network,video,audio,optical,floppy,storage,scanner,power "$USER_NAME"
+        wheel,users,audio,video,cdrom,plugdev,lp,uucp,scanner,power "$USER_NAME"
     echo "$USER_NAME:$USER_PASS" | chpasswd
 }
 
@@ -45,7 +45,8 @@ set_hostname()
 
 set_timezone()
 {
-    timeconfig America/Winnipeg
+    #timeconfig $TIMEZONE
+    cp /usr/share/zoneinfo/"$TIMEZONE" /etc/localtime
 }
 
 set_hosts()

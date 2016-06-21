@@ -45,7 +45,7 @@ install_base()
     local tagfiles="$(find "$PKG_DIR" -type f | grep "tagfile$")"
     local BASE="$(grep ':ADD$' $tagfiles | cut -f2 -d:)"
     BASE="$(echo "$BASE" | sed '/kernel-huge/c\kernel-generic')" # Use generic kernel
-    BASE+=" slackpkg ncurses which" # Lilo deps
+    BASE+=" slackpkg ncurses which wget gnupg mpfr openssh" # Lilo deps
     local BASE_FNAMES="$(pkg_to_fname $BASE)"
     [ -n "$BASE_FNAMES" ] || fatal "Failed to generate base installation package list"
     installpkg --root "$CHROOT_DIR" $BASE_FNAMES >/dev/null
