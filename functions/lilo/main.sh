@@ -2,30 +2,26 @@
 
 install_lilo()
 {
-    global SLACK_MIRROR
-    global CHROOT_PKGDIR
-    global SETTINGS_COMPLETE
-    global DESIRED_PKGS
     
     [ "$SETTINGS_COMPLETE" == true ] || config
     
     echo "$SLACK_MIRROR" > "/etc/slackpkg/mirrors"
     slackpkg update
-    step slackpkg install "$DESIRED_PKGS"
-    step create_user
-    step set_hostname
-    step set_timezone
-    #step set_locale
-    #step set_keymap
-    step set_hosts
-    step set_fstab
-    step set_initfs
-    step set_init
-    step set_bootloader
-    step set_sudoers
-    step set_net
-    step set_root
-    step gen_ssh
+    slackpkg install "$DESIRED_PKGS"
+    create_user
+    set_hostname
+    set_timezone
+    #set_locale
+    #set_keymap
+    set_hosts
+    set_fstab
+    set_initfs
+    set_init
+    set_bootloader
+    set_sudoers
+    set_net
+    set_root
+    gen_ssh
 
     #TODO dotfiles
     #TODO clone user's keys
@@ -37,8 +33,6 @@ install_lilo()
 
 create_user()
 {
-    global USER_NAME
-    global USER_PASS
     id -u "$USER_NAME" &>/dev/null || useradd -m -s /bin/bash -G \
         adm,systemd-journal,wheel,rfkill,games,network,video,audio,optical,floppy,storage,scanner,power "$USER_NAME"
     echo "$USER_NAME:$USER_PASS" | chpasswd
@@ -64,8 +58,6 @@ EOF
 
 set_fstab()
 {
-    global DECR_ROOT
-    global DECR_SWAP
     local boot_uuid=$(get_uuid "$BOOT_PART")
     
     if [ "$TMP_ON_TMPFS" == true ]
@@ -98,9 +90,6 @@ set_init()
 
 set_bootloader()
 {
-    global LVM_NAME_VG
-    global ENCR_PART
-    global DECR_ROOT
     cat > /etc/lilo.conf <<EOF
 image = /boot/$(get_kernel_filename)
   initrd = /boot/initrd.gz
@@ -127,8 +116,7 @@ set_net()
 
 set_root()
 {
-    global ROOT_PASSWORD
-    echo "root:$ROOT_PASSWORD" | chpasswd
+    echo "root:$ROOT_PASS" | chpasswd
 }
 
 gen_ssh()

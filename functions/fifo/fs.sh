@@ -4,7 +4,6 @@
 # Also mounts physical partition
 partition()
 {
-    global DRIVE
     parted -s "$DRIVE" \
         mklabel msdos \
         mkpart primary ext2 1 1G \
@@ -13,12 +12,23 @@ partition()
         set 2 LVM on
 }
 
+format_crypt()
+{
+    echo -en "$DECR_PASS" | cryptsetup --cipher aes-xts-plain64 --key-size 512 --hash sha512 --iter-time 5000 --use-random luksFormat "$ENCR_PART"
+    
+}
+
+open_crypt()
+{
+    echo -en "$DECR_PASS" | cryptsetup luksOpen "$ENCR_PART" "$DECR_MAPPER"
+}
+close_crypt()
+{
+    cryptsetup luksClose "$DECR_MAPPER"
+}
+
 create_lvm()
 {
-    global LVM_NAME_SWAP
-    global LVM_NAME_ROOT
-    global LVM_NAME_VG
-    global DECR_PART
     pvcreate "$DECR_PART"
     vgcreate "$LVM_NAME_VG" "$DECR_PART"
     
@@ -32,37 +42,38 @@ create_lvm()
     vgchange -ay
 }
 
-format_fs()
+format_plaintext()
 {
-    global DECR_ROOT
-    global DECR_SWAP
-    global BOOT_PART
-    mkfs.ext2 -L boot "$BOOT_PART"
-    mkfs.ext4 -L root "$DECR_ROOT"
+    mkfs.ext2 -F -L boot "$BOOT_PART"
+    mkfs.ext4 -F -L root "$DECR_ROOT"
     mkswap "$DECR_SWAP"
 }
 
-decrypt_fs()
+# NOTE: requires lvm be mounted already
+mount_plaintext()
 {
-    : #TODO
-}
-
-mount_fs()
-{
-    global DECR_ROOT
-    global DECR_SWAP
-    global CHROOT_DIR
-    global BOOT_PART
-    mkdir -p "$CHROOT_DIR/boot"
+    
     # Mount root
+    mkdir -p "$CHROOT_DIR"
     mount "$DECR_ROOT" "$CHROOT_DIR"
     # Mount boot
+    mkdir -p "$CHROOT_DIR/boot"
     mount "$BOOT_PART" "$CHROOT_DIR/boot"
     # Mount swap
     swapon "$DECR_SWAP"
-
+    
+    mkdir -p "$CHROOT_DIR/proc" "$CHROOT_DIR/dev"
     mount -t proc none "$CHROOT_DIR/proc"
     [[ $? -ne 0 ]] && fatal "Failed to mount proc in $CHROOT_DIR"
     mount --rbind /dev "$CHROOT_DIR/dev/"
     [[ $? -ne 0 ]] && fatal "Failed to mount dev in $CHROOT_DIR"
+}
+
+umount_plaintext()
+{
+    umount "$DECR_ROOT"
+    umount "$BOOT_PART"
+    swapoff "$DECR_SWAP"
+    umount "$CHROOT_DIR/proc"
+    umount "$CHROOT_DIR/dev"
 }
