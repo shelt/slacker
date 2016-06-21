@@ -1,0 +1,46 @@
+
+install_installer()
+{
+    which du && [ ! -f /bin/du ] && ln -s "$(which du)" /bin/du
+    
+    local tmproot="/tmp/installer_root"
+    mkdir -p "$tmproot"
+    tar xzf "$(pkg_to_fname pkgtools)" -C "$tmproot"
+    #tar xzf "$(pkg_to_fname tar)" -C "$tmproot"
+    #tar xzf "$(pkg_to_fname xz)" -C "$tmproot"
+    #xz -dc "$(pkg_to_fname glibc-solibs)" | tar xf - -C "$tmproot"
+    cp -R "$tmproot"/* /
+    #rm -rf "$tmproot" TODO
+}
+
+
+
+
+#installpkg_fifo() #OLD
+#{
+#    [ -n "$1" ] || fatal "inst requires at least 1 argument"
+#    local OPWD=$(pwd)
+#    local pkg="$1"
+#    [ -n "$pkg" ]    || fatal "No pkg argument given to instpkg"
+#    [ -d "$PKG_DIR" ] || fatal "PKG_DIR $PKG_DIR doesn't exist, can't install package $pkg"
+#    cd "$PKG_DIR"
+#    
+#    local pkgfile=pkg_to_fname "$pkg"
+#    [ -f "$pkgfile" ] || fatal "No archive for package $pkg"
+#    local archive=$(echo "$pkgfile" \
+#                        | sed 's/.*\.\([a-z][a-z][a-z]\)$/\1/') # TODO use ${variable//search/replace}
+#    
+#    if [ "$archive" = "txz" ]; then
+#        xz -dc "$pkgfile" | tar xf - -C /
+#    elif [ "$archive" = "tgz" ]; then
+#        tar xzf "$pkgfile" -C /
+#    fi
+#    
+#    #[ -f "/install/doinst.sh" ] && sh "/install/doinst.sh"
+#    #[ -d "/install" ] && rm -rf "/install/"
+#    
+#    cd "$OPWD"
+#    
+#    shift
+#    [ -n "$1" ] && installpkg_fifo "$@"
+#}

@@ -12,31 +12,31 @@ global()
 # in the install process.
 step()
 {
-    local cmd=$1
-    shift
-    echo -n "slacker: "
-    float=$(printf "%0.s " $(eval echo {0..$STEP_I}))
-#    [ -n $STEP_I ] && echo -n "$float"
-    echo "$float$cmd" >&3
-    (set -e; ((STEP_I+=1)); STEPTRACE+=">$cmd"; "$cmd" "$@") || error "${float}failed!" "stepfail"
+    local cmd=$1; shift
+    local float=$(printf "%0.s " $(eval echo {0..$STEP_I}))
+    float=${float#?} # TODO 1 too many spaces
+    tell "$float${CYAN}Doing $cmd${NC}"
+    STEP_I=$(( STEP+1 ))
+    "$cmd" "$@"
+    [ $STEP_I -gt 0 ] && STEP_I=$(( STEP_I+1 ))
+    
 }
 
 ### PRINTING ###
 tell()
 {
-    echo "slacker: " "$@" >&3
+    echo -e "slacker: $@" #>&3 TODO
 }
 
 error()
 {
     local msg="$1"
-    local trace="${2:-${STEPTRACE}}"
-    echo -e "slacker: ${RED}$msg [${trace}]${NC}" >&4
+    echo -e "slacker: ${RED}$msg${NC}" #>&4 TODO
 }
 
 fatal()
 {
-    echo "slacker: FATAL :(" >&4
+    echo "slacker: FATAL :(" #>&4 TODO
     error "$@"
     exit
 }
