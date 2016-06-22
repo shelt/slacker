@@ -9,5 +9,8 @@ A Slackware linux installation script.
 
 ## todo
 
-* ensure set -x is not being printed to console
-* replace lilo w elilo
+* replace lilo (the loader) w elilo
+* TODO: WHY ARE THERE SO MANY SD*
+* config prompt users for if they want REC pkgs
+* before fifo, check we have all required programs
+* fix spacing for steps

@@ -2,7 +2,6 @@
 
 install_fifo()
 {
-    step config
     step partition
     step format_crypt
     step open_crypt
@@ -28,13 +27,13 @@ install_fifo()
 #        cmds+="mirror --only-missing $series\n"
 #    done
 #    cmds+="bye\n"
-#    echo -e "$cmds" | lftp "$SLACK_MIRROR"
+#    echo -e "$cmds" | lftp "$SLACK_MIRROR/slackware64" #TODO allow for the SLACK_MIRROR to not be 64 bit
 #    )
 #}
 
 install_installer()
 {
-    which du && [ ! -f /bin/du ] && ln -s "$(which du)" /bin/du # Suppress warnings
+    which du >/dev/null && [ ! -f /bin/du ] && ln -s "$(which du)" /bin/du # Suppress warnings
     local tmproot="/tmp/installer_root"
     mkdir -p "$tmproot"
     tar xzf "$(pkg_to_fname pkgtools)" -C /
@@ -45,7 +44,7 @@ install_base()
     local tagfiles="$(find "$PKG_DIR" -type f | grep "tagfile$")"
     local BASE="$(grep ':ADD$' $tagfiles | cut -f2 -d:)"
     BASE="$(echo "$BASE" | sed '/kernel-huge/c\kernel-generic')" # Use generic kernel
-    BASE+=" slackpkg ncurses which wget gnupg mpfr openssh" # Lilo deps
+    BASE+=" slackpkg ncurses which wget gnupg mpfr openssh openssl glibc dhcpcd dialog mkinitrd" # Lilo deps
     local BASE_FNAMES="$(pkg_to_fname $BASE)"
     [ -n "$BASE_FNAMES" ] || fatal "Failed to generate base installation package list"
     installpkg --root "$CHROOT_DIR" $BASE_FNAMES >/dev/null
@@ -61,6 +60,7 @@ do_chroot()
 pkg_to_fname()
 {
     for curr in $@; do
-        find "$PKG_DIR" -type f | egrep "/$curr-[0-9.]+-.*\.(txz|tgz)$"
+        find "$PKG_DIR" -type f | egrep "/$curr-.*\.(txz|tgz)$"
+        [ $? -eq 1 ] && error "Failed to locate tarball for package $curr"
     done
 }

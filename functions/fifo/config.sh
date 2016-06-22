@@ -3,7 +3,6 @@
 config()
 {
     declare_vars
-    set_time #TODO
     identify_hardware
     prompt_settings
     config_partitions
@@ -13,7 +12,7 @@ config()
 declare_vars()
 {
     ### NON-CONFIGURABLE ###
-    declare -gx SLACK_MIRROR="ftp://mirrors1.kernel.org/slackware/slackware64-14.1/slackware64/"
+    declare -gx SLACK_MIRROR="ftp://mirrors1.kernel.org/slackware/slackware64-14.1/"
     declare -gx CHROOT_DIR="/mnt/root" # Where root will be mounted in live environment
     declare -gx DESIRED_PKGS="
 kbd

@@ -2,12 +2,9 @@
 
 install_lilo()
 {
-    
-    [ "$SETTINGS_COMPLETE" == true ] || config
-    
     echo "$SLACK_MIRROR" > "/etc/slackpkg/mirrors"
-    slackpkg update
-    slackpkg install "$DESIRED_PKGS"
+    slackpkg update >/dev/null
+    slackpkg install "$DESIRED_PKGS" >/dev/null
     create_user
     set_hostname
     set_timezone
@@ -124,23 +121,29 @@ gen_ssh()
 {
     # Note: sshd_config, ssh_config and moduli are expected
     # to be added during dotfiles repo clone.
+    #TODO: Uncomment ecdsa and -o lines on upgrade to openssh 6.5
     mkdir -p /etc/ssh
     rm -rf /etc/ssh/*
 
     # Generate host keys
-    ssh-keygen -t ed25519 -N "" -f /etc/ssh/ssh_host_ed25519
+#    ssh-keygen -t ed25519 -N "" -f /etc/ssh/ssh_host_ed25519                    #+
+    ssh-keygen -t ecdsa -N "" -f /etc/ssh/ssh_host_ed25519                       #-
     ssh-keygen -t rsa -b 4096 -N "" -f /etc/ssh/ssh_host_rsa
 
     # Generate auth keys
-    ssh-keygen -t ed25519 -N "" -o -a 100 -f /etc/ssh/ssh_auth_ed25519
-    ssh-keygen -t rsa -b 4096 -N "" -o -a 100 -f /etc/ssh/ssh_auth_rsa
+#    ssh-keygen -t ed25519 -N "" -o -a 100 -f /etc/ssh/ssh_auth_ed25519          #+
+#    ssh-keygen -t rsa -b 4096 -N "" -o -a 100 -f /etc/ssh/ssh_auth_rsa          #+
+    ssh-keygen -t ecdsa -N "" -a 100 -f /etc/ssh/ssh_auth_ed25519                #-
+    ssh-keygen -t rsa -b 4096 -N "" -a 100 -f /etc/ssh/ssh_auth_rsa              #-
 
     # Modify permissions
     chown root /etc/ssh/*
     chmod 700 /etc/ssh
-    chmod 600 /etc/ssh/ssh_host_ed25519
+#    chmod 600 /etc/ssh/ssh_host_ed25519                                         #+
+    chmod 600 /etc/ssh/ssh_host_ecdsa                                            #-
     chmod 600 /etc/ssh/ssh_host_rsa
-    chmod 600 /etc/ssh/ssh_auth_ed25519.pub
+#    chmod 600 /etc/ssh/ssh_auth_ed25519.pub                                     #+
+    chmod 600 /etc/ssh/ssh_auth_ecdsa.pub                                        #-
     chmod 600 /etc/ssh/ssh_auth_rsa.pub
 }
 

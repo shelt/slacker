@@ -49,7 +49,7 @@ format_plaintext()
     mkswap "$DECR_SWAP"
 }
 
-# NOTE: requires lvm be mounted already
+# NOTE: requires the LVM be decrypted, enabled
 mount_plaintext()
 {
     
@@ -62,6 +62,10 @@ mount_plaintext()
     # Mount swap
     swapon "$DECR_SWAP"
     
+    # Mount packages
+    mkdir -p "$CHROOT_DIR/$PKG_DIR" # TODO allow for network install, these would be not needed
+    mount -t none -o bind "$PKG_DIR" "$CHROOT_DIR/$PKG_DIR"
+    
     mkdir -p "$CHROOT_DIR/proc" "$CHROOT_DIR/dev"
     mount -t proc none "$CHROOT_DIR/proc"
     [[ $? -ne 0 ]] && fatal "Failed to mount proc in $CHROOT_DIR"
@@ -71,9 +75,10 @@ mount_plaintext()
 
 umount_plaintext()
 {
-    umount "$DECR_ROOT"
-    umount "$BOOT_PART"
-    swapoff "$DECR_SWAP"
     umount "$CHROOT_DIR/proc"
     umount "$CHROOT_DIR/dev"
+    umount "$CHROOT_DIR/$PKG_DIR"
+    swapoff "$DECR_SWAP"
+    umount "$DECR_ROOT"
+    umount "$BOOT_PART"
 }

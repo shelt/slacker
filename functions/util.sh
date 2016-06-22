@@ -1,5 +1,17 @@
 #!/bin/bash
 
+check_internet()
+{
+    mkdir -p "/etc"
+    getent hosts google.com >/dev/null || echo "nameserver 8.8.8.8" >/etc/resolv.conf
+    ping 8.8.8.8 -c 2 >/dev/null && return
+    which dhcpcd && dhcpcd "$WIRED_DEVICE" && return
+    which dhclient && dhclient "$WIRED_DEVICE"
+    ping 8.8.8.8 -c 2 >/dev/null || fatal "Failed to establish an internet connection"
+}
+
+
+#TODO unused
 global()
 {
     IFS='=' read var val <<< "$1"

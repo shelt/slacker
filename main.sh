@@ -1,11 +1,11 @@
 #!/bin/bash
-# The only non-function code in the whole project.
 
-#TODO move all to here of [ "$SETTINGS_COMPLETE" == true ] || config
+[ "$SETTINGS_COMPLETE" == true ] || step config
+step check_internet
+
 if [ "$1" == "chroot" ]; then
-    step check_internet #TODO do we need internet for fifo too?
     step install_lilo
-elif [ "$1" == "fn" ]; then
+elif [ "$1" == "step" ]; then
     [ "$SETTINGS_COMPLETE" == true ] || config
     shift
     step $@
