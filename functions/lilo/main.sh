@@ -4,7 +4,7 @@ install_lilo()
 {
     echo "$SLACK_MIRROR" > "/etc/slackpkg/mirrors"
     slackpkg update >/dev/null
-    slackpkg install "$DESIRED_PKGS" >/dev/null
+    slackpkg install "$DESIRED_PKGS" -batch=on >/dev/null #TODO -batch option is not working?
     create_user
     set_hostname
     set_timezone
@@ -127,13 +127,13 @@ gen_ssh()
 
     # Generate host keys
 #    ssh-keygen -t ed25519 -N "" -f /etc/ssh/ssh_host_ed25519                    #+
-    ssh-keygen -t ecdsa -N "" -f /etc/ssh/ssh_host_ed25519                       #-
+    ssh-keygen -t ecdsa -N "" -f /etc/ssh/ssh_host_ecdsa                         #-
     ssh-keygen -t rsa -b 4096 -N "" -f /etc/ssh/ssh_host_rsa
 
     # Generate auth keys
 #    ssh-keygen -t ed25519 -N "" -o -a 100 -f /etc/ssh/ssh_auth_ed25519          #+
 #    ssh-keygen -t rsa -b 4096 -N "" -o -a 100 -f /etc/ssh/ssh_auth_rsa          #+
-    ssh-keygen -t ecdsa -N "" -a 100 -f /etc/ssh/ssh_auth_ed25519                #-
+    ssh-keygen -t ecdsa -N "" -a 100 -f /etc/ssh/ssh_auth_ecdsa                  #-
     ssh-keygen -t rsa -b 4096 -N "" -a 100 -f /etc/ssh/ssh_auth_rsa              #-
 
     # Modify permissions

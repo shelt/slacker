@@ -3,9 +3,17 @@
 config()
 {
     declare_vars
-    identify_hardware
     prompt_settings
-    config_partitions
+    
+    # config partitions
+    BOOT_PART="$DRIVE"1
+    ENCR_PART="$DRIVE"2
+    if [ "$ENCRYPT" == true ]
+    then
+        DECR_PART="/dev/mapper/$DECR_MAPPER"
+    else
+        DECR_PART="$ENCR_PART"
+    fi
 }
 
 # Also sets defaults
@@ -46,9 +54,8 @@ wget
     declare -gx TIMEZONE='America/Winnipeg' # Default system timezone.
     declare -gx EXTENDED_CONFIG=false       # Prompt user for extended settings.
     declare -gx PKG_DIR
-    declare -gx WIRELESS_DEVICE
-    declare -gx WIRED_DEVICE
-    declare -gx VIDEO_DRIVER="i915" # For Intel #TODO autodetection
+    declare -gx WIRELESS_DEVICE=$(get_wireless_device)
+    declare -gx WIRED_DEVICE=$(get_wired_device)
     declare -gx DECR_PASS
     declare -gx USER_PASS
     declare -gx ROOT_PASS
@@ -107,8 +114,7 @@ prompt_settings()
         
         tell "# General #"
         read_dflt "Timezone" TIMEZONE
-        read_dflt "Enable /tmp on a tmpfs? true/false (good only for low-ram systems" TMP_ON_TMPFS
-        read_dflt "Keymap (dvorak, us, etc.)" KEYMAP
+        read_dflt "Enable /tmp on a tmpfs? true/false (good only for low-ram systems)" TMP_ON_TMPFS
         read_dflt "Test install (No packages)" TEST_INSTALL
         
         tell "Extended configuration completed."
@@ -117,19 +123,6 @@ prompt_settings()
     SETTINGS_COMPLETE=true
     tell "Configuration completed."
 }
-
-config_partitions()
-{
-    BOOT_PART="$DRIVE"1
-    ENCR_PART="$DRIVE"2
-    if [ "$ENCRYPT" == true ]
-    then
-        DECR_PART="/dev/mapper/$DECR_MAPPER"
-    else
-        DECR_PART="$ENCR_PART"
-    fi
-}
-
 
 ### UTIL ###
 read_init()
@@ -171,9 +164,14 @@ read_pass()
     declare -gx "$dest"
 }
 
-identify_hardware()
+get_wired_device()
 {
-    #TODO should have seperate functions that return the data to the vars
-    WIRED_DEVICE="$(ip link | grep "eno\|enp" | awk '{print $2}'| sed 's/://' | sed '1!d')"
-    WIRELESS_DEVICE="$(ip link | grep wlp | awk '{print $2}'| sed 's/://' | sed '1!d')"
+    line="$(ip link | egrep -o "(eth|en|eno)[0-9]+:")"
+    echo ${line%?}
+}
+
+get_wireless_device()
+{
+    line="$(ip link | egrep -o "wlan\d+(?=:)")"
+    echo ${line%?}
 }
