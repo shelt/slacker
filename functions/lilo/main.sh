@@ -3,8 +3,9 @@
 install_lilo()
 {
     echo "$SLACK_MIRROR" > "/etc/slackpkg/mirrors"
+    slackpkg update gpg >/dev/null #TODO ensure works
     slackpkg update >/dev/null
-    slackpkg install "$DESIRED_PKGS" -batch=on >/dev/null #TODO -batch option is not working?
+    slackpkg -batch=on -default_answer=y install "$DESIRED_PKGS" >/dev/null #TODO -batch option is not working?
     create_user
     set_hostname
     set_timezone
@@ -86,16 +87,21 @@ set_init()
     : #TODO
 }
 
+# TODO: cryptdevice=/dev/disk/by-uuid/$(get_uuid "$ENCR_PART"):$LVM_NAME_VG
 set_bootloader()
 {
     cat > /etc/lilo.conf <<EOF
-image = /boot/$(get_kernel_filename)
-  initrd = /boot/initrd.gz
-  root = $DECR_ROOT
-  cryptdevice = cryptdevice=/dev/disk/by-uuid/$(get_uuid "$ENCR_PART"):$LVM_NAME_VG
-  label = linux
-  read-only
+boot=$DRIVE
+map=/boot/map
+install=/boot/boot.b
+compact
+image=/boot/$(get_kernel_filename)
+    initrd=/boot/initrd.gz
+    root=$DECR_ROOT
+    label=linux
+    read-only
 EOF
+    lilo
 }
 
 set_sudoers()
@@ -126,25 +132,25 @@ gen_ssh()
     rm -rf /etc/ssh/*
 
     # Generate host keys
-#    ssh-keygen -t ed25519 -N "" -f /etc/ssh/ssh_host_ed25519                    #+
-    ssh-keygen -t ecdsa -N "" -f /etc/ssh/ssh_host_ecdsa                         #-
-    ssh-keygen -t rsa -b 4096 -N "" -f /etc/ssh/ssh_host_rsa
+#    ssh-keygen -t ed25519 -N "" -f /etc/ssh/ssh_host_ed25519_key                    #+
+    ssh-keygen -t ecdsa -N "" -f /etc/ssh/ssh_host_ecdsa_key                         #-
+    ssh-keygen -t rsa -b 4096 -N "" -f /etc/ssh/ssh_host_rsa_key
 
     # Generate auth keys
-#    ssh-keygen -t ed25519 -N "" -o -a 100 -f /etc/ssh/ssh_auth_ed25519          #+
-#    ssh-keygen -t rsa -b 4096 -N "" -o -a 100 -f /etc/ssh/ssh_auth_rsa          #+
-    ssh-keygen -t ecdsa -N "" -a 100 -f /etc/ssh/ssh_auth_ecdsa                  #-
-    ssh-keygen -t rsa -b 4096 -N "" -a 100 -f /etc/ssh/ssh_auth_rsa              #-
+#    ssh-keygen -t ed25519 -N "" -o -a 100 -f /etc/ssh/ssh_auth_ed25519_key          #+
+#    ssh-keygen -t rsa -b 4096 -N "" -o -a 100 -f /etc/ssh/ssh_auth_rsa_key          #+
+    ssh-keygen -t ecdsa -N "" -a 100 -f /etc/ssh/ssh_auth_ecdsa_key                  #-
+    ssh-keygen -t rsa -b 4096 -N "" -a 100 -f /etc/ssh/ssh_auth_rsa_key              #-
 
     # Modify permissions
     chown root /etc/ssh/*
     chmod 700 /etc/ssh
-#    chmod 600 /etc/ssh/ssh_host_ed25519                                         #+
-    chmod 600 /etc/ssh/ssh_host_ecdsa                                            #-
-    chmod 600 /etc/ssh/ssh_host_rsa
-#    chmod 600 /etc/ssh/ssh_auth_ed25519.pub                                     #+
-    chmod 600 /etc/ssh/ssh_auth_ecdsa.pub                                        #-
-    chmod 600 /etc/ssh/ssh_auth_rsa.pub
+#    chmod 600 /etc/ssh/ssh_host_ed25519_key                                         #+
+    chmod 600 /etc/ssh/ssh_host_ecdsa_key                                            #-
+    chmod 600 /etc/ssh/ssh_host_rsa_key
+#    chmod 600 /etc/ssh/ssh_auth_ed25519_key.pub                                     #+
+    chmod 600 /etc/ssh/ssh_auth_ecdsa_key.pub                                        #-
+    chmod 600 /etc/ssh/ssh_auth_rsa_key.pub
 }
 
 ### UTILITIES ###

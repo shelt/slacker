@@ -24,6 +24,7 @@ open_crypt()
 }
 close_crypt()
 {
+    vgchange -an "$LVM_NAME_VG"
     cryptsetup luksClose "$DECR_MAPPER"
 }
 
@@ -33,7 +34,7 @@ create_lvm()
     vgcreate "$LVM_NAME_VG" "$DECR_PART"
     lvcreate -C y -L1G "$LVM_NAME_VG" -n "$LVM_NAME_SWAP"      # 1GB swap partition
     lvcreate -l '+100%FREE' "$LVM_NAME_VG" -n "$LVM_NAME_ROOT" # rest of the space for root
-    vgchange -ay                                               # Enable volumes
+#    vgchange -ay                                               # Enable volumes #TODO, not needed
 }
 
 format_plaintext()
@@ -43,9 +44,10 @@ format_plaintext()
     mkswap "$DECR_SWAP"
 }
 
-# NOTE: requires the LVM be decrypted, enabled
 mount_plaintext()
 {
+    # Enable volumes
+    vgchange -ay "$LVM_NAME_VG"
     # Mount root
     mkdir -p "$CHROOT_DIR"
     mount "$DECR_ROOT" "$CHROOT_DIR"
@@ -72,6 +74,7 @@ umount_plaintext()
     umount -R "$CHROOT_DIR/dev"
     umount "$CHROOT_DIR/$PKG_DIR"
     swapoff "$DECR_SWAP"
-    umount "$DECR_ROOT"
     umount "$BOOT_PART"
+    umount "$DECR_ROOT"
+    vgchange -an "$LVM_NAME_VG"
 }

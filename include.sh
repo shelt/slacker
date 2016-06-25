@@ -15,9 +15,18 @@ declare -gx LOGFILE="/slacker.log"
 declare -gx DEBUGMODE=true
 
 
+#TODO fix non-debug mode
+#[ "$DEBUGMODE" == true ] || exec 2> >(while read line; do echo -e "\e[01;31m$line\e[0m" >&2; done)
+#[ "$DEBUGMODE" == true ] && set -x
+
+#[ "$DEBUGMODE" == true ] && exec > >(tee -a ${LOGFILE} )
+#[ "$DEBUGMODE" == true ] && exec 2> >(tee -a ${LOGFILE} >&2)
+
 
 [ "$DEBUGMODE" == true ] || exec 2> >(while read line; do echo -e "\e[01;31m$line\e[0m" >&2; done)
+[ "$DEBUGMODE" == true ] || exec 3>&1 1>"$LOGFILE"
+
 [ "$DEBUGMODE" == true ] && set -x
 
-exec > >(tee -a ${LOGFILE} )
-exec 2> >(tee -a ${LOGFILE} >&2)
+[ "$DEBUGMODE" == true ] && exec > >(tee -a ${LOGFILE} )
+[ "$DEBUGMODE" == true ] && exec 2> >(tee -a ${LOGFILE} >&2)

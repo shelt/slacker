@@ -42,18 +42,16 @@ install_installer()
 install_base()
 {
     local tagfiles="$(find "$PKG_DIR" -type f | grep "tagfile$")"
-    local BASE="$(grep ':ADD$' $tagfiles | cut -f2 -d:)"
+    local BASE="$(egrep ':(ADD|REC)$' $tagfiles | cut -f2 -d:)"
     BASE="$(echo "$BASE" | sed '/kernel-huge/c\kernel-generic')" # Use generic kernel
-    BASE+=" slackpkg ncurses which wget gnupg mpfr openssh openssl glibc dhcpcd dialog mkinitrd lvm2 cryptsetup" # Lilo deps
+    BASE+=" slackpkg ncurses which wget gnupg mpfr openssh openssl glibc dhcpcd dialog mkinitrd lvm2 cryptsetup libgcrypt libgpg-error diffutils rsync" # Lilo deps
     local BASE_FNAMES="$(pkg_to_fname $BASE)"
     [ -n "$BASE_FNAMES" ] || fatal "Failed to generate base installation package list"
     installpkg --root "$CHROOT_DIR" $BASE_FNAMES >/dev/null
     
-    # Slackpkg+ TODO sourceforge doesn't support http
-    mkdir  -p"/tmp/slackpkg+"
-    cd "/tmp/slackpkg+"
-    wget "https://sourceforge.net/projects/slackpkgplus/files/slackpkg+-1.7.0-noarch-2mt.txz/download"
-    installpkg --root "$CHROOT_DIR" "slackpkg+*"
+    mkdir  -p "/tmp"
+    wget --no-check-certificate "https://github.com/sbopkg/sbopkg/releases/download/0.37.1/sbopkg-0.37.1-noarch-1_wsr.tgz" -O "/tmp/sbopkg.tgz"
+    installpkg --root "$CHROOT_DIR" "/tmp/sbopkg.tgz"
 }
 
 do_chroot()
@@ -61,6 +59,7 @@ do_chroot()
     cp "/slacker.log" "$CHROOT_DIR/slacker.fifo.log"
     cp "$0" "$CHROOT_DIR/$(basename "$0")"
     chroot "$CHROOT_DIR" "./$(basename "$0")" chroot
+    rm "$CHROOT_DIR/$(basename "$0")"
 }
 
 pkg_to_fname()
