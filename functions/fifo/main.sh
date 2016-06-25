@@ -42,9 +42,30 @@ install_installer()
 install_base()
 {
     local tagfiles="$(find "$PKG_DIR" -type f | grep "tagfile$")"
-    local BASE="$(egrep ':(ADD|REC)$' $tagfiles | cut -f2 -d:)"
-    BASE="$(echo "$BASE" | sed '/kernel-huge/c\kernel-generic')" # Use generic kernel
-    BASE+=" slackpkg ncurses which wget gnupg mpfr openssh openssl glibc dhcpcd dialog mkinitrd lvm2 cryptsetup libgcrypt libgpg-error diffutils rsync" # Lilo deps
+    local BASE= "$(egrep ':ADD$' $tagfiles | cut -f2 -d:)"          # All required packages
+    local BASE+="$(egrep ':REC$' $PKG_DIR/l/tagfile | cut -f2 -d:)" # Recommended libraries
+    BASE="$(echo "$BASE" | sed '/kernel-huge/c\kernel-generic')"    # Use generic kernel
+    # Lilo deps
+    BASE+=" slackpkg"     # Installing desired packages
+    BASE+=" ncurses"      # I forget
+    BASE+=" which"        # check_internet (among other things)
+    BASE+=" wget"         # retrieving sbopkg
+    BASE+=" curl"         # sbopkg
+    BASE+=" gnupg"        # sbopkg among others
+    BASE+=" mpfr"         # I forget
+    BASE+=" openssh"      # I forget
+    BASE+=" openssl"      # HTTPS
+    BASE+=" glibc"        # I forget
+    BASE+=" dhcpcd"       # check_internet
+    BASE+=" dialog"       # slackpkg, sbopkg...
+    BASE+=" mkinitrd"     # set_initfs
+    BASE+=" lvm2"         # LILO
+    BASE+=" cryptsetup"   # LILO
+    BASE+=" libgpg-error" # I forget
+    BASE+=" diffutils"    # I forget
+    BASE+=" rsync"        # sbopkg
+    #TODO this is not all that is needed
+
     local BASE_FNAMES="$(pkg_to_fname $BASE)"
     [ -n "$BASE_FNAMES" ] || fatal "Failed to generate base installation package list"
     installpkg --root "$CHROOT_DIR" $BASE_FNAMES >/dev/null
@@ -52,6 +73,7 @@ install_base()
     mkdir  -p "/tmp"
     wget --no-check-certificate "https://github.com/sbopkg/sbopkg/releases/download/0.37.1/sbopkg-0.37.1-noarch-1_wsr.tgz" -O "/tmp/sbopkg.tgz"
     installpkg --root "$CHROOT_DIR" "/tmp/sbopkg.tgz"
+    
 }
 
 do_chroot()

@@ -6,6 +6,7 @@ install_lilo()
     slackpkg update gpg >/dev/null #TODO ensure works
     slackpkg update >/dev/null
     slackpkg -batch=on -default_answer=y install "$DESIRED_PKGS" >/dev/null #TODO -batch option is not working?
+    #TODO sbopkg "update"
     create_user
     set_hostname
     set_timezone
