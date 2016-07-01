@@ -89,7 +89,7 @@ do_chroot()
 pkg_to_fname()
 {
     for curr in $@; do
-        find "$PKG_DIR" -type f | egrep "/.*\.(txz|tgz)$" | fgrep "$curr"
+        find "$PKG_DIR" -type f | egrep "/.*\.(txz|tgz)$" | fgrep "/$curr-"
         [ $? -eq 1 ] && error "Failed to locate tarball for package $curr"
     done
 }
