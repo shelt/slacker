@@ -25,12 +25,8 @@ global()
 step()
 {
     local cmd=$1; shift
-    local float=$(printf "%0.s " $(eval echo {0..$STEP_I}))
-    float=${float#?} # TODO 1 too many spaces
-    tell "$float${CYAN}Doing $cmd${NC}"
-    STEP_I=$(( STEP+1 ))
+    tell "${CYAN}Doing $cmd${NC}"
     "$cmd" "$@"
-    [ $STEP_I -gt 0 ] && STEP_I=$(( STEP_I+1 ))
     
 }
 

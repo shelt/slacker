@@ -20,17 +20,11 @@ config()
 declare_vars()
 {
     ### NON-CONFIGURABLE ###
-    declare -gx SLACK_MIRROR="ftp://mirrors1.kernel.org/slackware/slackware64-14.1/"
+    declare -gx SLACK_VERS="14.2" # Be sure to update sbopkg release url when changing this
+    declare -gx SLACK_MIRROR="ftp://mirrors1.kernel.org/slackware/slackware64-$SLACK_VERS/"
     declare -gx CHROOT_DIR="/mnt/root" # Where root will be mounted in live environment
-    declare -gx DESIRED_PKGS="
-kbd
-dhcpcd
-ntp
-openssh
-file
-which
-wget
-"
+    declare -gx EXTRA_PKGS_OFFICIAL="sudo Thunar mozilla-firefox ntp kbd"
+    declare -gx EXTRA_PKGS_SBO="i3 i3status feh autocutsel lxappearance"
 
     declare -gx LVM_NAME_VG=vg00
     declare -gx LVM_NAME_ROOT=root
@@ -42,7 +36,7 @@ wget
     declare -gx BOOT_PART
     declare -gx ENCR_PART
     declare -gx DECR_MAPPER=decrpv
-    declare -gx DECR_PART # Path to the lvm pv. Encrypted? [/dev/mapper/DECR_MAPPER]. Not encrypted? [ENCR_PART].
+    declare -gx DECR_PART # Encrypted ? /dev/mapper/$DECR_MAPPER : $ENCR_PART
 
     
     ### CONFIGURABLES ###
@@ -71,7 +65,10 @@ wget
     # Dotfiles
     declare -gx DOTFILES=true
     declare -gx DOTFILES_URL='https://www.bitbucket.com/shelt/dots'
-    declare -gx DOTFILES_EXEC='sudo python2 clone.py -u sam'
+    declare -gx DOTFILES_EXEC="sudo python2 clone.py -u $USER_NAME"
+    # Keyring
+    declare -gx KEYRING=true
+    declare -gx KEYRING_DIR
     
     declare -gx SETTINGS_COMPLETE=false
 }
@@ -99,17 +96,21 @@ prompt_settings()
             read_dflt "Decryption hint? true/false" DECRYPT_HINT
             if [ "$DECRYPT_HINT" == true ]; then
                 read_dflt "Decryption hint contact email" DECRYPT_HINT_CONTACT
-                read_dflt "Failed attempts before hint" ATTEMPTS_TILL_HINT # TODO only a madman would ever modify this
+                read_dflt "Failed attempts before hint" ATTEMPTS_TILL_HINT #TODO only a madman would ever modify this
             fi
         fi
-
-        #TODO keyfiles
         
         tell "# Dotfiles #"
         read_dflt "Clone dotfiles repository?" DOTFILES
         if [ "$DOTFILES" == true ]; then
             read_dflt "Repository Git URL" DOTFILES_URL
             read_dflt "Command to execute in repo" DOTFILES_EXEC
+        fi
+
+        tell "# Keyring #"
+        read_dflt "Clone keyring (gnupg) directory?" KEYRING
+        if [ "$KEYRING" == true ]; then
+            read_init "Keyring directory" KEYRING_DIR
         fi
         
         tell "# General #"
@@ -133,7 +134,7 @@ read_init()
     unset "$dest"
     
     until [ -n "${!dest}" ]; do
-        tell "$prompt" "(default ${!dest}): "
+        tell "${prompt}: "
         read -re -p "$READPROMPT" "$dest"
     done
     declare -gx "$dest"
@@ -172,6 +173,6 @@ get_wired_device()
 
 get_wireless_device()
 {
-    line="$(ip link | egrep -o "wlan\d+(?=:)")"
+    line="$(ip link | egrep -o "wlan\d+:")"
     echo ${line%?}
 }

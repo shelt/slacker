@@ -39,8 +39,8 @@ create_lvm()
 
 format_plaintext()
 {
-    mkfs.ext2 -F -L boot "$BOOT_PART"
-    mkfs.ext4 -F -L root "$DECR_ROOT"
+    mkfs.ext2 -q -F -L boot "$BOOT_PART"
+    mkfs.ext4 -q -F -L root "$DECR_ROOT"
     mkswap "$DECR_SWAP"
 }
 

@@ -8,7 +8,6 @@ install_fifo()
     step create_lvm
     step format_plaintext
     step mount_plaintext
-#    step get_series a ap n l
     which installpkg || step install_installer
     step install_base
     step do_chroot
@@ -16,64 +15,35 @@ install_fifo()
     step close_crypt
 }
 
-# Package retrieval is temp. disabled.
-#get_series()
-#{
-#    (
-#    local cmds
-#    mkdir -p "$CHROOT_DIR/$PKG_DIR"
-#    cd "$CHROOT_DIR/$PKG_DIR"
-#    for series in "$@"; do
-#        cmds+="mirror --only-missing $series\n"
-#    done
-#    cmds+="bye\n"
-#    echo -e "$cmds" | lftp "$SLACK_MIRROR/slackware64" #TODO allow for the SLACK_MIRROR to not be 64 bit
-#    )
-#}
-
 install_installer()
 {
     which du >/dev/null && [ ! -f /bin/du ] && ln -s "$(which du)" /bin/du # Suppress warnings
     local tmproot="/tmp/installer_root"
     mkdir -p "$tmproot"
-    tar xzf "$(pkg_to_fname pkgtools)" -C /
+    xz -d < "$(pkg_to_fname pkgtools)" | tar xvf -C /
 }
 
 install_base()
 {
-    ( cd "$CHROOT_DIR" && mkdir -p bin boot cdrom dev etc home lib lib64 media mnt opt proc root sbin sys tmp usr var )
-    local tagfiles="$(find "$PKG_DIR" -type f | grep "tagfile$")"
+    local tagfiles="$(find "$PKG_DIR" -type f | grep 'tagfile$')"
     local BASE
-    BASE=" $(egrep ':ADD$' $tagfiles | cut -f2 -d:)"              # All required packages
-    BASE=" $(echo "$BASE" | sed '/kernel-huge/c\kernel-generic')" # Use generic kernel
-    BASE+=" $(egrep ':REC$' $PKG_DIR/l/tagfile | cut -f1 -d:)"     # Recommended libraries
-    # Lilo deps
-    BASE+=" slackpkg"     # Installing desired packages
-    BASE+=" ncurses"      # I forget
-    BASE+=" which"        # check_internet (among other things)
-    BASE+=" wget"         # retrieving sbopkg
-    BASE+=" curl"         # sbopkg
-    BASE+=" gnupg"        # sbopkg among others
-    BASE+=" mpfr"         # I forget
-    BASE+=" openssh"      # I forget
-    BASE+=" openssl"      # HTTPS
-    BASE+=" glibc"        # I forget
-    BASE+=" dhcpcd"       # check_internet
-    BASE+=" dialog"       # slackpkg, sbopkg...
-    BASE+=" mkinitrd"     # set_initfs
-    BASE+=" lvm2"         # LILO
-    BASE+=" cryptsetup"   # LILO
-    BASE+=" libgpg-error" # I forget
-    BASE+=" diffutils"    # I forget
-    BASE+=" rsync"        # sbopkg
-    #TODO this is not all that is needed
+    # All required packages (TODO might not be needed, adds undesirables like emacs and kde)
+    BASE=" $(egrep ':ADD$' $tagfiles | cut -f2 -d:)"
+    # Use generic kernel
+    BASE=" $(echo "$BASE" | sed '/kernel-huge/c\kernel-generic')"
+    # Full install sets
+    BASE+=" $(egrep ':(ADD|REC|OPT)$' $PKG_DIR/{a,ap,d,l,n,x,y}/tagfile | cut -f2 -d:)"
+    # Recommended install sets
+    BASE+=" $(egrep ':REC$' $PKG_DIR/{f,xap}/tagfile | cut -f2 -d:)"
+    # Remove duplicates
+    BASE="$(echo $BASE | xargs -n1 | sort -u | xargs)" 
     
     local BASE_FNAMES="$(pkg_to_fname $BASE)"
     [ -n "$BASE_FNAMES" ] || fatal "Failed to generate base installation package list"
-    installpkg --root "$CHROOT_DIR" $BASE_FNAMES #TODO >/dev/null
+    installpkg --root "$CHROOT_DIR" $BASE_FNAMES >/dev/null
     
     mkdir  -p "/tmp"
-    wget --no-check-certificate "https://github.com/sbopkg/sbopkg/releases/download/0.37.1/sbopkg-0.37.1-noarch-1_wsr.tgz" -O "/tmp/sbopkg.tgz" >/dev/null
+    wget --no-check-certificate "https://github.com/sbopkg/sbopkg/releases/download/0.38.0/sbopkg-0.38.0-noarch-1_wsr.tgz" -O "/tmp/sbopkg.tgz" >/dev/null
     installpkg --root "$CHROOT_DIR" "/tmp/sbopkg.tgz" >/dev/null
     
 }
@@ -89,7 +59,7 @@ do_chroot()
 pkg_to_fname()
 {
     for curr in $@; do
-        find "$PKG_DIR" -type f | egrep "/.*\.(txz|tgz)$" | fgrep "/$curr-"
+        find "$PKG_DIR" -type f | egrep '/.*\.(txz|tgz)$' | fgrep "/$curr-"
         [ $? -eq 1 ] && error "Failed to locate tarball for package $curr"
     done
 }
