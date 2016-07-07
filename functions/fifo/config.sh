@@ -24,7 +24,7 @@ declare_vars()
     declare -gx SLACK_MIRROR="ftp://mirrors1.kernel.org/slackware/slackware64-$SLACK_VERS/"
     declare -gx CHROOT_DIR="/mnt/root" # Where root will be mounted in live environment
     declare -gx EXTRA_PKGS_OFFICIAL="sudo Thunar mozilla-firefox ntp kbd"
-    declare -gx EXTRA_PKGS_SBO="i3 i3status feh autocutsel lxappearance"
+    declare -gx EXTRA_PKGS_SBO="i3 i3status feh autocutsel lxappearance rxvt-unicode"
 
     declare -gx LVM_NAME_VG=vg00
     declare -gx LVM_NAME_ROOT=root

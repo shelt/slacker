@@ -20,7 +20,7 @@ install_installer()
     which du >/dev/null && [ ! -f /bin/du ] && ln -s "$(which du)" /bin/du # Suppress warnings
     local tmproot="/tmp/installer_root"
     mkdir -p "$tmproot"
-    xz -d < "$(pkg_to_fname pkgtools)" | tar xvf -C /
+    xz -q -d < "$(pkg_to_fname pkgtools)" | tar xf - -C /
 }
 
 install_base()
@@ -43,7 +43,7 @@ install_base()
     installpkg --root "$CHROOT_DIR" $BASE_FNAMES >/dev/null
     
     mkdir  -p "/tmp"
-    wget --no-check-certificate "https://github.com/sbopkg/sbopkg/releases/download/0.38.0/sbopkg-0.38.0-noarch-1_wsr.tgz" -O "/tmp/sbopkg.tgz" >/dev/null
+    wget –q --no-check-certificate "https://github.com/sbopkg/sbopkg/releases/download/0.38.0/sbopkg-0.38.0-noarch-1_wsr.tgz" -O "/tmp/sbopkg.tgz" >/dev/null # todo redirect probably unneccesary
     installpkg --root "$CHROOT_DIR" "/tmp/sbopkg.tgz" >/dev/null
     
 }

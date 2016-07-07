@@ -12,7 +12,7 @@ declare -gx CYAN="\033[36m"
 
 declare -gx READPROMPT="> "
 declare -gx LOGFILE="/slacker.log"
-declare -gx DEBUGMODE=true #TODO
+declare -gx DEBUGMODE=false
 
 [ "$DEBUGMODE" == true ] && set -x
 

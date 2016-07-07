@@ -12,7 +12,7 @@ declare -gx CYAN="\033[36m"
 
 declare -gx READPROMPT="> "
 declare -gx LOGFILE="/slacker.log"
-declare -gx DEBUGMODE=true #TODO
+declare -gx DEBUGMODE=false
 
 [ "$DEBUGMODE" == true ] && set -x
 
@@ -46,7 +46,7 @@ declare_vars()
     declare -gx SLACK_MIRROR="ftp://mirrors1.kernel.org/slackware/slackware64-$SLACK_VERS/"
     declare -gx CHROOT_DIR="/mnt/root" # Where root will be mounted in live environment
     declare -gx EXTRA_PKGS_OFFICIAL="sudo Thunar mozilla-firefox ntp kbd"
-    declare -gx EXTRA_PKGS_SBO="i3 i3status feh autocutsel lxappearance"
+    declare -gx EXTRA_PKGS_SBO="i3 i3status feh autocutsel lxappearance rxvt-unicode"
 
     declare -gx LVM_NAME_VG=vg00
     declare -gx LVM_NAME_ROOT=root
@@ -304,7 +304,7 @@ install_installer()
     which du >/dev/null && [ ! -f /bin/du ] && ln -s "$(which du)" /bin/du # Suppress warnings
     local tmproot="/tmp/installer_root"
     mkdir -p "$tmproot"
-    tar xzf "$(pkg_to_fname pkgtools)" -C /
+    xz -q -d < "$(pkg_to_fname pkgtools)" | tar xf - -C /
 }
 
 install_base()
@@ -327,7 +327,7 @@ install_base()
     installpkg --root "$CHROOT_DIR" $BASE_FNAMES >/dev/null
     
     mkdir  -p "/tmp"
-    wget --no-check-certificate "https://github.com/sbopkg/sbopkg/releases/download/0.38.0/sbopkg-0.38.0-noarch-1_wsr.tgz" -O "/tmp/sbopkg.tgz" >/dev/null
+    wget –q --no-check-certificate "https://github.com/sbopkg/sbopkg/releases/download/0.38.0/sbopkg-0.38.0-noarch-1_wsr.tgz" -O "/tmp/sbopkg.tgz" >/dev/null # todo redirect probably unneccesary
     installpkg --root "$CHROOT_DIR" "/tmp/sbopkg.tgz" >/dev/null
     
 }
@@ -372,17 +372,18 @@ install_lilo()
     step gen_ssh
 
     [ "$DOTFILES" == true ] && step clone_dotfiles
-    [ "$KEYRING" == true ]  && step clone_keyring
+    [ "$KEYRING" == true ]  && step clone_keyring #TODO should only be for non-root user; root user keyring is used for pkg managers
 
     tell "Chroot complete!"
 }
 
+#TODO it doesn't make sense why `slackpkg` output is going to stderr
 install_official_extras()
 {
     echo "$SLACK_MIRROR" > "/etc/slackpkg/mirrors"
-    slackpkg update gpg >/dev/null
-    slackpkg update >/dev/null
-    slackpkg -batch=on -default_answer=y install "$EXTRA_PKGS_OFFICIAL" >/dev/null #TODO -batch option is not working?
+    slackpkg update gpg &>/dev/null
+    slackpkg update &>/dev/null
+    slackpkg -batch=on -default_answer=y install "$EXTRA_PKGS_OFFICIAL" &>/dev/null #TODO redirect to /dev/null doesn't work
 }
 
 install_slackbuild_extras()
@@ -447,9 +448,83 @@ set_initfs()
     mkinitrd -c -f ext4 -k "$(get_kernel_version)" -m ext4 -r "$DECR_ROOT" -C "$ENCR_PART" -L
 }
 
+# Changes from default: 
+#   * Autologin on tty1
 set_init()
 {
-    : #TODO
+    cat > /etc/inittab <<EOF
+#
+# inittab	This file describes how the INIT process should set up
+#		the system in a certain run-level.
+#
+# Version:	@(#)inittab		2.04	17/05/93	MvS
+#                                       2.10    02/10/95        PV
+#                                       3.00    02/06/1999      PV
+#                                       4.00    04/10/2002      PV
+#                                      13.37    2011-03-25      PJV
+#
+# Author:	Miquel van Smoorenburg, <miquels@drinkel.nl.mugnet.org>
+# Modified by:	Patrick J. Volkerding, <volkerdi@slackware.com>
+#
+
+# These are the default runlevels in Slackware:
+#   0 = halt
+#   1 = single user mode
+#   2 = unused (but configured the same as runlevel 3)
+#   3 = multiuser mode (default Slackware runlevel)
+#   4 = X11 with KDM/GDM/XDM (session managers)
+#   5 = unused (but configured the same as runlevel 3)
+#   6 = reboot
+
+# Default runlevel. (Do not set to 0 or 6)
+id:3:initdefault:
+
+# System initialization (runs when system boots).
+si:S:sysinit:/etc/rc.d/rc.S
+
+# Script to run when going single user (runlevel 1).
+su:1S:wait:/etc/rc.d/rc.K
+
+# Script to run when going multi user.
+rc:2345:wait:/etc/rc.d/rc.M
+
+# What to do at the "Three Finger Salute".
+ca::ctrlaltdel:/sbin/shutdown -t5 -r now
+
+# Runlevel 0 halts the system.
+l0:0:wait:/etc/rc.d/rc.0
+
+# Runlevel 6 reboots the system.
+l6:6:wait:/etc/rc.d/rc.6
+
+# What to do when power fails.
+pf::powerfail:/sbin/genpowerfail start
+
+# If power is back, cancel the running shutdown.
+pg::powerokwait:/sbin/genpowerfail stop
+
+# These are the standard console login getties in multiuser mode:
+c1:12345:respawn:/sbin/agetty --autologin $USER_NAME --noclear 38400 tty1 linux
+c2:12345:respawn:/sbin/agetty 38400 tty2 linux
+c3:12345:respawn:/sbin/agetty 38400 tty3 linux
+c4:12345:respawn:/sbin/agetty 38400 tty4 linux
+c5:12345:respawn:/sbin/agetty 38400 tty5 linux
+c6:12345:respawn:/sbin/agetty 38400 tty6 linux
+
+# Local serial lines:
+#s1:12345:respawn:/sbin/agetty -L ttyS0 9600 vt100
+#s2:12345:respawn:/sbin/agetty -L ttyS1 9600 vt100
+
+# Dialup lines:
+#d1:12345:respawn:/sbin/agetty -mt60 38400,19200,9600,2400,1200 ttyS0 vt100
+#d2:12345:respawn:/sbin/agetty -mt60 38400,19200,9600,2400,1200 ttyS1 vt100
+
+# Runlevel 4 also starts /etc/rc.d/rc.4 to run a display manager for X.
+# Display managers are preferred in this order:  gdm, kdm, xdm
+x1:4:respawn:/etc/rc.d/rc.4
+
+# End of /etc/inittab
+EOF
 }
 
 set_bootloader()
@@ -522,14 +597,15 @@ clone_dotfiles()
 
 get_kernel_filename()
 {
-    kernels=( $(cd /boot && ls vmlinuz-generic*) )
-    echo "${kernels[0]}"
+    kernels=$(find /boot -type f -name 'vmlinuz-generic-*')
+    [ -z "$kernels" ] && error "get_kernel_filename: Failed to find versioned kernel in boot partition."
+    echo "${kernels[0]}" | xargs basename
 }
 
 get_kernel_version()
 {
-    fname=$(get_kernel_filename)
-    echo "${fname#$"vmlinuz-generic-"}"
+    get_kernel_filename | sed "s/^vmlinuz-generic-//"
+    #echo "${fname#$"vmlinuz-generic-"}"
 }
 
 
