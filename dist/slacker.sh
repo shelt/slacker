@@ -216,7 +216,7 @@ partition()
 
 format_crypt()
 {
-    echo -en "$DECR_PASS" | cryptsetup --cipher aes-xts-plain64 --key-size 512 --hash sha512 --iter-time 5000 --use-random luksFormat "$ENCR_PART"
+    echo -en "$DECR_PASS" | cryptsetup -q --cipher aes-xts-plain64 --key-size 512 --hash sha512 --iter-time 5000 --use-random luksFormat "$ENCR_PART"
     
 }
 
