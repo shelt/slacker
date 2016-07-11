@@ -173,6 +173,6 @@ get_wired_device()
 
 get_wireless_device()
 {
-    line="$(ip link | egrep -o "wlan\d+:")"
+    line="$(ip link | egrep -o "wlan[0-9]+:")"
     echo ${line%?}
 }
