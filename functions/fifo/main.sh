@@ -3,6 +3,10 @@
 install_fifo()
 {
     step partition
+    while [ ! -e $ENCR_PART ]; do
+        echo "Waiting for /dev/ to update after partitioning..."
+        sleep 1
+    done
     step format_crypt
     step open_crypt
     step create_lvm
