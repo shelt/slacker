@@ -112,7 +112,7 @@ prompt_settings()
     read_dflt "Extended configuration? true/false" EXTENDED_CONFIG
     if [ "$EXTENDED_CONFIG" == true ]; then
         tell "## Extended Configuration ##"
-        if [ "$ENCRYPT_DRIVE" == true ]; then
+        if [ "$ENCRYPT" == true ]; then
             tell "# Decryption #"
             
             read_dflt "Decryption hint? true/false" DECRYPT_HINT
@@ -287,6 +287,10 @@ umount_plaintext()
 install_fifo()
 {
     step partition
+    while [ ! -e $ENCR_PART ]; do
+        echo "Waiting for /dev/ to update after partitioning..."
+        sleep 1
+    done
     step format_crypt
     step open_crypt
     step create_lvm
@@ -626,16 +630,6 @@ check_internet()
     which dhcpcd && dhcpcd "$WIRED_DEVICE" && return
     which dhclient && dhclient "$WIRED_DEVICE"
     ping 8.8.8.8 -c 2 >/dev/null || fatal "Failed to establish an internet connection"
-}
-
-
-#TODO unused
-global()
-{
-    IFS='=' read var val <<< "$1"
-    [ -z "${var+x}" ]           && fatal "undeclared variable declared as global: $1"
-    bash -c '[ -z ${var+x} ]' && fatal "nonexported variable declared as global"
-    declare -gx "$1"
 }
 
 # Accepts a function (opt. parameters) which executes as a step

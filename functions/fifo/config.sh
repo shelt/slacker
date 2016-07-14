@@ -90,7 +90,7 @@ prompt_settings()
     read_dflt "Extended configuration? true/false" EXTENDED_CONFIG
     if [ "$EXTENDED_CONFIG" == true ]; then
         tell "## Extended Configuration ##"
-        if [ "$ENCRYPT_DRIVE" == true ]; then
+        if [ "$ENCRYPT" == true ]; then
             tell "# Decryption #"
             
             read_dflt "Decryption hint? true/false" DECRYPT_HINT

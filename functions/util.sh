@@ -10,16 +10,6 @@ check_internet()
     ping 8.8.8.8 -c 2 >/dev/null || fatal "Failed to establish an internet connection"
 }
 
-
-#TODO unused
-global()
-{
-    IFS='=' read var val <<< "$1"
-    [ -z "${var+x}" ]           && fatal "undeclared variable declared as global: $1"
-    bash -c '[ -z ${var+x} ]' && fatal "nonexported variable declared as global"
-    declare -gx "$1"
-}
-
 # Accepts a function (opt. parameters) which executes as a step
 # in the install process.
 step()
